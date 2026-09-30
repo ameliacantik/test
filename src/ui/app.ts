@@ -106,9 +106,9 @@ export class App {
             </div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
-            <button class="btn btn-primary" id="btn-start" style="padding:12px 24px;font-size:10px;">▶ BEGIN VOYAGE — ENTER THE VOID</button>
+            <button class="btn btn-primary" id="btn-start" style="padding:12px 24px;font-size:10px;">> BEGIN VOYAGE — ENTER THE VOID</button>
             <button class="btn" id="btn-load" style="display:none;padding:12px 20px;">CONTINUE LAST VOYAGE</button>
-            <button class="btn" id="btn-audio-toggle" style="padding:12px 16px;">🔊 Audio: ${localStorage.getItem('aether_mute') === 'true' ? 'OFF' : 'ON'}</button>
+            <button class="btn" id="btn-audio-toggle" style="padding:12px 16px;">[AUDIO] Audio: ${localStorage.getItem('aether_mute') === 'true' ? 'OFF' : 'ON'}</button>
           </div>
           <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;font-size:8px;color:var(--text-4);letter-spacing:0.12em;">
             <span>SEED: ${this.engine.galaxy.seed}</span>
@@ -157,7 +157,7 @@ export class App {
           <div class="status-item"><span class="status-label">FTL Charge</span><span class="status-value" id="val-ftl" style="color:var(--cyan)">100%</span></div>
           <div class="status-item"><span class="status-label">Location</span><span class="status-value" id="val-loc" style="font-size:9px;">—</span></div>
           <div class="status-item" style="min-width:56px;justify-content:center;align-items:center;padding:0 8px;">
-            <button class="btn btn-small" id="btn-mute" style="padding:5px 8px;min-width:32px;">${localStorage.getItem('aether_mute') === 'true' ? '🔇' : '🔊'}</button>
+            <button class="btn btn-small" id="btn-mute" style="padding:5px 8px;min-width:32px;">${localStorage.getItem('aether_mute') === 'true' ? '[MUTE]' : '[AUDIO]'}</button>
           </div>
         </div>
       </div>
@@ -193,8 +193,8 @@ export class App {
             <div class="map-controls">
               <button class="map-btn" id="btn-zoom-in" title="Zoom In">+</button>
               <button class="map-btn" id="btn-zoom-out" title="Zoom Out">−</button>
-              <button class="map-btn" id="btn-center" title="Center Ship">◉</button>
-              <button class="map-btn" id="btn-particles" title="Toggle particles">✦</button>
+              <button class="map-btn" id="btn-center" title="Center Ship">[CTR]</button>
+              <button class="map-btn" id="btn-particles" title="Toggle particles">[FX]</button>
             </div>
             <div class="map-legend">
               <div style="font-weight:700;margin-bottom:8px;letter-spacing:0.18em;font-size:8px;color:var(--cyan);">NAVIGATION LEGEND</div>
@@ -310,8 +310,8 @@ export class App {
       <div class="planet-surface-hud">
         <div style="font-size:11px;color:var(--text-dim);">WASD to look around • Mouse drag to orbit • Scroll to zoom • ESC to exit</div>
         <div style="margin-left:auto;display:flex;gap:8px;">
-          <button class="btn btn-small" id="btn-collect-samples">🧪 Collect Samples</button>
-          <button class="btn btn-primary btn-small" id="btn-return-orbit">🚀 Return to Orbit</button>
+          <button class="btn btn-small" id="btn-collect-samples">[SAMPLE] Collect Samples</button>
+          <button class="btn btn-primary btn-small" id="btn-return-orbit">[LAUNCH] Return to Orbit</button>
         </div>
       </div>
     `;
@@ -367,8 +367,8 @@ export class App {
     btnLoad.addEventListener('click', hideIntro);
     this.root.querySelector('#btn-audio-toggle')?.addEventListener('click', () => {
       const muted = audioManager.toggleMute();
-      (this.root.querySelector('#btn-audio-toggle') as HTMLElement).textContent = `🔊 Audio: ${muted ? 'OFF' : 'ON'}`;
-      (this.root.querySelector('#btn-mute') as HTMLElement).textContent = muted ? '🔇' : '🔊';
+      (this.root.querySelector('#btn-audio-toggle') as HTMLElement).textContent = `[AUDIO] Audio: ${muted ? 'OFF' : 'ON'}`;
+      (this.root.querySelector('#btn-mute') as HTMLElement).textContent = muted ? '[MUTE]' : '[AUDIO]';
     });
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && !intro.classList.contains('hidden')) hideIntro();
@@ -529,8 +529,8 @@ export class App {
     });
     this.root.querySelector('#btn-mute')?.addEventListener('click', () => {
       const muted = audioManager.toggleMute();
-      (this.root.querySelector('#btn-mute') as HTMLElement).textContent = muted ? '🔇' : '🔊';
-      (this.root.querySelector('#btn-audio-toggle') as HTMLElement).textContent = `🔊 Audio: ${muted ? 'OFF' : 'ON'}`;
+      (this.root.querySelector('#btn-mute') as HTMLElement).textContent = muted ? '[MUTE]' : '[AUDIO]';
+      (this.root.querySelector('#btn-audio-toggle') as HTMLElement).textContent = `[AUDIO] Audio: ${muted ? 'OFF' : 'ON'}`;
       this.showToast(muted ? 'Audio muted' : 'Audio enabled', 'info');
     });
 
@@ -584,7 +584,18 @@ export class App {
       // Particle effect at ship position
       const active = this.getActiveRenderer();
       const shipScreen = active.worldToScreen(this.engine.shipManager.state.position);
-      this.particleSystem.emit(shipScreen.x, shipScreen.y, 20, 'discovery', { speed: 3, spread: Math.PI * 2, color: '#4ade80' });
+      this.particleSystem.emit(shipScreen.x, shipScreen.y, 20, 'discovery', { speed: 3, spread: Math.PI * 2, color: '#00ff88' });
+      // Premium discovery feedback — glitch + toast with typewriter
+      const disc = ev.data as any;
+      this.triggerDiscoveryGlitch(disc.name || disc.title || 'UNKNOWN');
+      // Scan pulse at discovery location if possible
+      if (disc.location) {
+        const sys = this.engine.galaxy.getSystem(disc.location.systemId);
+        if (sys) {
+          const sysScreen = active.worldToScreen(sys.position);
+          this.triggerScanPulse(sysScreen.x, sysScreen.y);
+        }
+      }
     });
     eventBus.on('SYSTEM_SCANNED', () => { 
       this.updateLeftPanel(); 
@@ -619,7 +630,7 @@ export class App {
     });
     eventBus.on('QUEST_COMPLETED', (ev) => {
       const q = ev.data.quest;
-      this.showModal('Quest Completed', `<div style="text-align:center;padding:10px;"><div style="font-size:32px;margin-bottom:12px;">✓</div><div style="font-weight:700;font-size:16px;margin-bottom:8px;">${q.title}</div><div style="color:var(--text-dim);font-size:12px;margin-bottom:16px;">${q.description}</div><div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:6px;padding:12px;font-size:12px;">Reward: ${q.rewards.credits} credits${q.rewards.resources ? ' + resources' : ''}</div>${q.selectedChoice ? `<div style="margin-top:12px;font-size:11px;color:var(--text-faint)">Choice: ${q.selectedChoice}</div>` : ''}</div>`, [{ label: 'Continue', primary: true, action: () => this.hideModal() }]);
+      this.showModal('Quest Completed', `<div style="text-align:center;padding:10px;"><div style="font-size:32px;margin-bottom:12px;">[OK]</div><div style="font-weight:700;font-size:16px;margin-bottom:8px;">${q.title}</div><div style="color:var(--text-dim);font-size:12px;margin-bottom:16px;">${q.description}</div><div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:6px;padding:12px;font-size:12px;">Reward: ${q.rewards.credits} credits${q.rewards.resources ? ' + resources' : ''}</div>${q.selectedChoice ? `<div style="margin-top:12px;font-size:11px;color:var(--text-faint)">Choice: ${q.selectedChoice}</div>` : ''}</div>`, [{ label: 'Continue', primary: true, action: () => this.hideModal() }]);
     });
     eventBus.on('MISSION_AVAILABLE', (ev) => {
       this.showToast(`New mission: ${(ev.data as any).title}`, 'info');
@@ -890,7 +901,7 @@ export class App {
           <div style="display:flex;flex-direction:column;gap:6px;">
             ${(this.engine.galaxy as any).getPOIsInRange ? ((this.engine.galaxy as any).getPOIsInRange(this.engine.shipManager.state.position, this.engine.shipManager.state.sensorRange).slice(0, 3).map((poi: any) => `
               <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:4px;padding:6px;font-size:10px;">
-                <div style="font-weight:600;">${poi.type === 'rogue_planet' ? '●' : '◈'} ${poi.name}</div>
+                <div style="font-weight:600;">${poi.type === 'rogue_planet' ? '[DOT]' : '[ANOM]'} ${poi.name}</div>
                 <div style="color:var(--text-dim);font-size:9px;">${poi.type} • ${poi.rarity} • ${Math.hypot(poi.position.x - this.engine.shipManager.state.position.x, poi.position.y - this.engine.shipManager.state.position.y).toFixed(0)} LY</div>
               </div>
             `).join('') || '<div style="font-size:10px;color:var(--text-faint)">No POIs in range — void is empty, as real space is (70% empty)</div>') : '<div style="font-size:10px;color:var(--text-faint)">No POIs — true emptiness of space</div>'}
@@ -906,8 +917,8 @@ export class App {
           </div>
         `;
         actionBar.innerHTML = `
-          <button class="btn btn-small" id="btn-save">💾 Save</button>
-          <button class="btn btn-small" id="btn-scan-long">📡 Long Scan</button>
+          <button class="btn btn-small" id="btn-save">[SAVE] Save</button>
+          <button class="btn btn-small" id="btn-scan-long">[OUTPOST] Long Scan</button>
           <button class="btn btn-small btn-danger" id="btn-reset">Reset</button>
         `;
         panel.querySelectorAll('.system-mini').forEach(el => {
@@ -975,13 +986,13 @@ export class App {
                   <span>${p.attributes.temperature.toFixed(0)}°C</span>
                   <span>${p.attributes.gravity.toFixed(1)}G</span>
                   <span>${p.isLandable ? 'Landable' : 'No landing'}</span>
-                  ${p.hasLife ? '<span style="color:var(--success)">● Life</span>' : ''}
-                  ${p.hasRuins ? '<span style="color:var(--warning)">◈ Ruins</span>' : ''}
+                  ${p.hasLife ? '<span style="color:var(--success)">[DOT] Life</span>' : ''}
+                  ${p.hasRuins ? '<span style="color:var(--warning)">[ANOM] Ruins</span>' : ''}
                 </div>
               </div>
             `).join('')}
           </div>
-          ${sys.anomalies.length ? `<div class="section-title" style="margin-top:16px;">Anomalies</div><div style="font-size:11px;color:var(--text-dim);">${sys.anomalies.map(a => `⚠ ${a.name} (${a.rarity})`).join('<br>')}</div>` : ''}
+          ${sys.anomalies.length ? `<div class="section-title" style="margin-top:16px;">Anomalies</div><div style="font-size:11px;color:var(--text-dim);">${sys.anomalies.map(a => `[WARN] ${a.name} (${a.rarity})`).join('<br>')}</div>` : ''}
         `;
         actionBar.innerHTML = `
           <button class="btn btn-small" id="btn-back-galaxy">← Galaxy</button>
@@ -1203,8 +1214,8 @@ export class App {
         </div>
       `;
       actionBar.innerHTML = `
-        <button class="btn btn-small" id="btn-repair-all">🔧 Repair All Critical</button>
-        <button class="btn btn-small" id="btn-power-dist">⚡ Power Dist</button>
+        <button class="btn btn-small" id="btn-repair-all">[REPAIR] Repair All Critical</button>
+        <button class="btn btn-small" id="btn-power-dist">[STORM] Power Dist</button>
         <button class="btn btn-small" id="btn-ship-details">Details</button>
       `;
       panel.querySelectorAll('.module-row').forEach(el => {
@@ -1332,7 +1343,7 @@ export class App {
               </div>
               <div style="font-size:11px;color:var(--text-dim);line-height:1.4;margin-bottom:8px;">${q.description}</div>
               <div style="font-size:10px;">
-                ${q.objectives.map(o => `<div style="display:flex;gap:6px;align-items:center;padding:2px 0;"><span style="color:${o.completed ? 'var(--success)' : 'var(--text-faint)'}">${o.completed ? '✓' : '○'}</span><span style="color:${o.completed ? 'var(--text-faint)' : 'var(--text)'};text-decoration:${o.completed ? 'line-through' : 'none'}">${o.description}</span></div>`).join('')}
+                ${q.objectives.map(o => `<div style="display:flex;gap:6px;align-items:center;padding:2px 0;"><span style="color:${o.completed ? 'var(--success)' : 'var(--text-faint)'}">${o.completed ? '[OK]' : '[ ]'}</span><span style="color:${o.completed ? 'var(--text-faint)' : 'var(--text)'};text-decoration:${o.completed ? 'line-through' : 'none'}">${o.description}</span></div>`).join('')}
               </div>
             </div>
           `).join('') : '<div style="font-size:11px;color:var(--text-faint)">No active quests</div>'}
@@ -1355,7 +1366,7 @@ export class App {
         <div style="display:flex;flex-direction:column;gap:6px;">
           ${completed.slice(0, 5).map(q => `
             <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:4px;padding:8px;font-size:10px;opacity:0.6;">
-              <div style="font-weight:600;">✓ ${q.title} ${q.selectedChoice ? `(${q.selectedChoice})` : ''}</div>
+              <div style="font-weight:600;">[OK] ${q.title} ${q.selectedChoice ? `(${q.selectedChoice})` : ''}</div>
               <div style="color:var(--text-faint);">Completed • ${q.rewards.credits} CR</div>
             </div>
           `).join('') || '<div style="font-size:11px;color:var(--text-faint)">None yet</div>'}
@@ -1407,7 +1418,7 @@ export class App {
           ${this.engine.storyManager.chapters.map((ch, idx) => `
             <div style="background:${ch.isCompleted ? 'rgba(74,222,128,0.06)' : idx === this.engine.storyManager.currentChapterIndex ? 'rgba(216,180,254,0.08)' : 'rgba(255,255,255,0.02)'};border:1px solid ${ch.isCompleted ? 'rgba(74,222,128,0.2)' : idx === this.engine.storyManager.currentChapterIndex ? 'rgba(216,180,254,0.3)' : 'var(--border)'};border-radius:6px;padding:12px;">
               <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div style="font-weight:700;font-size:12px;color:${ch.isCompleted ? 'var(--success)' : idx === this.engine.storyManager.currentChapterIndex ? '#d8b4fe' : 'var(--text-dim)'}">${ch.isCompleted ? '✓' : idx === this.engine.storyManager.currentChapterIndex ? '▶' : '○'} ${ch.title}</div>
+                <div style="font-weight:700;font-size:12px;color:${ch.isCompleted ? 'var(--success)' : idx === this.engine.storyManager.currentChapterIndex ? '#d8b4fe' : 'var(--text-dim)'}">${ch.isCompleted ? '[OK]' : idx === this.engine.storyManager.currentChapterIndex ? '>' : '[ ]'} ${ch.title}</div>
                 <div style="font-size:10px;color:var(--text-faint);">LVL ${ch.requiredLevel}</div>
               </div>
               <div style="font-size:11px;color:var(--text-dim);margin-top:6px;line-height:1.4;">${ch.description}</div>
@@ -1469,7 +1480,7 @@ export class App {
             <button class="btn btn-small" id="btn-combat-escape">🏃 Escape</button>
             ${encounter.canNegotiate ? `<button class="btn btn-small" id="btn-combat-negotiate">💬 Negotiate</button>` : ''}
             ${encounter.canHack ? `<button class="btn btn-small" id="btn-combat-hack">💻 Hack</button>` : ''}
-            <button class="btn btn-small" id="btn-combat-distract">✦ Distract</button>
+            <button class="btn btn-small" id="btn-combat-distract">[FX] Distract</button>
           </div>
         ` : `
           <div style="font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:16px;">
@@ -1587,7 +1598,7 @@ export class App {
             return `
               <div style="background:${canCraft ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.03)'};border:1px solid ${canCraft ? 'rgba(74,222,128,0.2)' : 'var(--border)'};border-radius:6px;padding:12px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <div style="font-weight:700;font-size:12px;">${r.name} ${canCraft ? '<span style="color:var(--success);">●</span>' : '<span style="color:var(--text-faint);">○</span>'}</div>
+                  <div style="font-weight:700;font-size:12px;">${r.name} ${canCraft ? '<span style="color:var(--success);">[DOT]</span>' : '<span style="color:var(--text-faint);">[ ]</span>'}</div>
                   <div style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(255,255,255,0.05);">${r.category} • Lvl ${r.requiredLevel}</div>
                 </div>
                 <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">${r.description}</div>
@@ -1670,7 +1681,7 @@ export class App {
         <div style="display:flex;flex-direction:column;gap:6px;">
           ${completed.slice(0, 10).map(n => `
             <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:4px;padding:8px;font-size:10px;">
-              <div style="font-weight:600;">✓ ${n.name} (${n.category})</div>
+              <div style="font-weight:600;">[OK] ${n.name} (${n.category})</div>
               <div style="color:var(--text-faint);">Unlocks: ${n.unlocks.join(', ') || 'None'}</div>
             </div>
           `).join('') || '<div style="font-size:11px;color:var(--text-faint);">None yet</div>'}
@@ -1717,7 +1728,7 @@ export class App {
             return `
               <div style="background:rgba(255,255,255,0.03);border:1px solid ${wh.type === 'ancient_gate' ? 'rgba(216,180,254,0.3)' : wh.type === 'stable' ? 'rgba(90,160,255,0.3)' : 'rgba(255,77,106,0.3)'};border-radius:6px;padding:10px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                  <div style="font-weight:700;font-size:12px;color:${wh.type === 'ancient_gate' ? '#d8b4fe' : wh.type === 'stable' ? '#5aa0ff' : '#ff4d6a'};">🌀 ${wh.id} • ${wh.type} • ${(wh.stability * 100).toFixed(0)}% stable</div>
+                  <div style="font-weight:700;font-size:12px;color:${wh.type === 'ancient_gate' ? '#d8b4fe' : wh.type === 'stable' ? '#5aa0ff' : '#ff4d6a'};">[GATE] ${wh.id} • ${wh.type} • ${(wh.stability * 100).toFixed(0)}% stable</div>
                   <div style="font-size:10px;color:var(--text-faint);">${dist.toFixed(0)} LY</div>
                 </div>
                 <div style="font-size:10px;color:var(--text-dim);">Pos: ${wh.position.x.toFixed(0)}, ${wh.position.y.toFixed(0)} → Linked: ${wh.linkedTo?.x.toFixed(0)}, ${wh.linkedTo?.y.toFixed(0)}</div>
@@ -1761,7 +1772,7 @@ export class App {
           <div style="font-size:12px;font-weight:700;margin-bottom:4px;">Progress: ${progress.solved}/${progress.total} (${progress.percent.toFixed(0)}%)</div>
           <div style="width:100%;height:6px;background:rgba(216,180,254,0.15);border-radius:3px;overflow:hidden;margin-bottom:8px;"><div style="width:${progress.percent}%;height:100%;background:linear-gradient(90deg, #d8b4fe, #5aa0ff);"></div></div>
           <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">
-            Ancient language based on symbols ◈⬡⬔⬓◬◭⬙⬗⬖⬕⬑⬐◫◧◨◩◪⬒⬓.<br>
+            Ancient language based on symbols [ANOM]⬡⬔⬓◬◭⬙⬗⬖⬕⬑⬐◫◧◨◩◪⬒⬓.<br>
             Difficulty 1-2: any order. Difficulty 3+: exact order required.<br>
             Needs translator for difficulty >3 (craft in Crafting). Rewards: Codex + Rep Scientific Coalition + Ancient.
           </div>
@@ -1792,7 +1803,7 @@ export class App {
         <div style="display:flex;flex-direction:column;gap:6px;">
           ${solved.slice(0, 10).map(p => `
             <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:4px;padding:8px;font-size:10px;">
-              <div style="font-weight:600;">✓ ${p.alienWord} = ${p.humanTranslation}</div>
+              <div style="font-weight:600;">[OK] ${p.alienWord} = ${p.humanTranslation}</div>
               <div style="color:var(--text-faint);">Symbols: ${p.symbols.slice(0, 3).join(' ')} • Difficulty ${p.difficulty}</div>
             </div>
           `).join('') || '<div style="font-size:11px;color:var(--text-faint);">None yet</div>'}
@@ -1887,7 +1898,7 @@ export class App {
         panel.innerHTML = `
           <div class="section-title">Station Details</div>
           <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
-            <div style="width:48px;height:48px;background:linear-gradient(135deg, ${faction.color}22, ${faction.color}55);border:1px solid ${faction.color};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;">${station.type === 'colony' ? '🏙' : station.type === 'station' ? '🛰' : station.type === 'outpost' ? '📡' : station.type === 'gate' ? '🌀' : '💀'}</div>
+            <div style="width:48px;height:48px;background:linear-gradient(135deg, ${faction.color}22, ${faction.color}55);border:1px solid ${faction.color};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;">${station.type === 'colony' ? '[CITY]' : station.type === 'station' ? '[STATION]' : station.type === 'outpost' ? '[OUTPOST]' : station.type === 'gate' ? '[GATE]' : '[DERELICT]'}</div>
             <div><div style="font-size:16px;font-weight:700;">${station.name}</div><div style="font-size:11px;color:var(--text-dim);">${station.type} • ${faction.name}</div></div>
           </div>
           <div style="font-size:11px;line-height:1.6;color:var(--text-dim);margin-bottom:16px;">${station.description || 'No description'}</div>
@@ -1901,7 +1912,7 @@ export class App {
         actionBar.innerHTML = `
           <button class="btn btn-small" id="btn-clear-station">Clear</button>
           ${station.services?.includes('refuel') ? `<button class="btn btn-small" id="btn-refuel">⛽ Refuel</button>` : ''}
-          ${station.services?.includes('repair') ? `<button class="btn btn-small" id="btn-repair">🔧 Repair</button>` : ''}
+          ${station.services?.includes('repair') ? `<button class="btn btn-small" id="btn-repair">[REPAIR] Repair</button>` : ''}
           ${station.services?.includes('trade') ? `<button class="btn btn-primary btn-small" id="btn-trade">Trade</button>` : ''}
         `;
         actionBar.querySelector('#btn-clear-station')?.addEventListener('click', () => { this.selectedStationId = null; this.updateRightPanel(); });
@@ -1926,7 +1937,7 @@ export class App {
         if (!planet) return;
         const def = PLANET_TYPES[planet.type];
         const parentSys = this.engine.galaxy.getSystem(planet.parentSystemId);
-        const weatherIcon: Record<string, string> = { clear: '☀️', dust_storm: '🌪️', rain: '🌧️', snow: '❄️', lightning: '⚡', meteor_shower: '☄️', aurora: '🌌', toxic_clouds: '☠️', radiation_storm: '☢️' };
+        const weatherIcon: Record<string, string> = { clear: '[CLEAR]', dust_storm: '[DUST]', rain: '[RAIN]', snow: '[SNOW]', lightning: '[STORM]', meteor_shower: '[METEOR]', aurora: '[AURORA]', toxic_clouds: '[TOXIC]', radiation_storm: '[RAD]' };
         panel.innerHTML = `
           <div class="section-title">Planet Details — v6 Expanded</div>
           <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;">
@@ -1943,15 +1954,15 @@ export class App {
             <div>Landing: ${(planet as any).landingCategory || (planet.isLandable ? 'landing' : 'flyby')}</div>
           </div>
           <div style="font-size:10px;color:var(--text-faint);margin-bottom:12px;">Resources: ${Object.entries(planet.resources).map(([k, v]) => `${k} ${v}`).join(' • ') || 'None'}</div>
-          ${planet.hasLife ? `<div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:4px;padding:8px;font-size:11px;margin-bottom:12px;">🧬 Life detected</div>` : ''}
-          ${planet.hasRuins ? `<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:4px;padding:8px;font-size:11px;margin-bottom:12px;">◈ Ruins detected — Ancient origin</div>` : ''}
+          ${planet.hasLife ? `<div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:4px;padding:8px;font-size:11px;margin-bottom:12px;">[BIO] Life detected</div>` : ''}
+          ${planet.hasRuins ? `<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:4px;padding:8px;font-size:11px;margin-bottom:12px;">[ANOM] Ruins detected — Ancient origin</div>` : ''}
           ${(planet as any).moons && (planet as any).moons.length ? `
             <div class="section-title">Moons (${(planet as any).moons.length})</div>
             <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
               ${(planet as any).moons.map((m: any) => `
                 <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:4px;padding:8px;font-size:10px;">
                   <div style="font-weight:600;">${m.name} • ${PLANET_TYPES[m.type as keyof typeof PLANET_TYPES]?.name || m.type} • R ${m.radius}</div>
-                  <div style="color:var(--text-dim);">T ${m.attributes.temperature.toFixed(0)}°C • G ${m.attributes.gravity.toFixed(1)} • Water ${(m.attributes.water * 100).toFixed(0)}% ${m.hasLife ? '• 🧬 Life' : ''} ${m.hasRuins ? '• ◈ Ruins' : ''}</div>
+                  <div style="color:var(--text-dim);">T ${m.attributes.temperature.toFixed(0)}°C • G ${m.attributes.gravity.toFixed(1)} • Water ${(m.attributes.water * 100).toFixed(0)}% ${m.hasLife ? '• [BIO] Life' : ''} ${m.hasRuins ? '• [ANOM] Ruins' : ''}</div>
                   <div style="color:var(--text-faint);">Resources: ${Object.entries(m.resources).map(([k, v]) => `${k} ${v}`).join(', ')}</div>
                 </div>
               `).join('')}
@@ -1961,7 +1972,7 @@ export class App {
         actionBar.innerHTML = `
           <button class="btn btn-small" id="btn-clear-planet">Clear</button>
           <button class="btn btn-primary btn-small" id="btn-scan-planet" ${planet.scanned ? 'disabled' : ''}>${planet.scanned ? 'Scanned' : '🔍 Scan'}</button>
-          ${planet.isLandable ? `<button class="btn btn-small" id="btn-land" ${!planet.scanned ? 'disabled' : ''}>🚀 Land</button>` : ''}
+          ${planet.isLandable ? `<button class="btn btn-small" id="btn-land" ${!planet.scanned ? 'disabled' : ''}>[LAUNCH] Land</button>` : ''}
         `;
         actionBar.querySelector('#btn-clear-planet')?.addEventListener('click', () => { this.selectedPlanetId = null; this.updateRightPanel(); this.updateLeftPanel(); });
         actionBar.querySelector('#btn-scan-planet')?.addEventListener('click', () => {
@@ -1990,7 +2001,7 @@ export class App {
             ${sys.faction ? `<strong>Faction:</strong> ${(FACTIONS as any)[sys.faction].name}<br>` : ''}
           </div>
         `;
-        actionBar.innerHTML = `<button class="btn btn-small" id="btn-focus">◉ Focus Map</button><button class="btn btn-small" id="btn-details-clear">Clear</button>`;
+        actionBar.innerHTML = `<button class="btn btn-small" id="btn-focus">[CTR] Focus Map</button><button class="btn btn-small" id="btn-details-clear">Clear</button>`;
         actionBar.querySelector('#btn-focus')?.addEventListener('click', () => this.getActiveRenderer().focusOn(sys.position));
         actionBar.querySelector('#btn-details-clear')?.addEventListener('click', () => { this.selectedSystemId = null; this.updateLeftPanel(); this.updateRightPanel(); });
       } else {
@@ -2006,7 +2017,7 @@ export class App {
             <strong>New in v5:</strong> WebGL 100k stars with twinkle shader, volumetric nebulae, black hole lensing, cockpit HUD, planet landing 3D with procedural terrain.
           </div>
         `;
-        actionBar.innerHTML = `<button class="btn btn-small" id="btn-center-ship">◉ Center on Ship</button>`;
+        actionBar.innerHTML = `<button class="btn btn-small" id="btn-center-ship">[CTR] Center on Ship</button>`;
         actionBar.querySelector('#btn-center-ship')?.addEventListener('click', () => this.getActiveRenderer().focusOn(this.engine.shipManager.state.position));
       }
     } else if (this.rightView === 'market') {
@@ -2436,7 +2447,7 @@ export class App {
 
   private triggerDiscoveryGlitch(title: string) {
     // Typewriter + glitch effect for important discoveries
-    this.showToast(`◈ DISCOVERY: ${title}`, 'success');
+    this.showToast(`[ANOM] DISCOVERY: ${title}`, 'success');
     const panel = this.root.querySelector('#panel-right') as HTMLElement;
     if (panel) {
       panel.style.animation = 'flicker 0.3s ease-in-out 3';
@@ -2510,7 +2521,7 @@ export class App {
       <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
         ${quest.objectives.map((o: any) => `
           <div style="display:flex;gap:8px;background:${o.completed ? 'rgba(74,222,128,0.06)' : 'rgba(255,255,255,0.03)'};border:1px solid ${o.completed ? 'rgba(74,222,128,0.2)' : 'var(--border)'};border-radius:4px;padding:8px;font-size:11px;">
-            <span style="color:${o.completed ? 'var(--success)' : 'var(--text-faint)'}">${o.completed ? '✓' : '○'}</span>
+            <span style="color:${o.completed ? 'var(--success)' : 'var(--text-faint)'}">${o.completed ? '[OK]' : '[ ]'}</span>
             <div style="flex:1;"><div style="font-weight:600;">${o.description}</div><div style="font-size:10px;color:var(--text-faint);">${o.type} ${o.targetSystemId || ''}</div></div>
           </div>
         `).join('')}
@@ -2592,8 +2603,8 @@ export class App {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     // Add icon based on type
-    const icons: Record<string, string> = { success: '✓', danger: '⚠', warning: '◈', info: '●' };
-    toast.innerHTML = `<span style="margin-right:8px;opacity:0.8;">${icons[type] || '●'}</span>${message}`;
+    const icons: Record<string, string> = { success: '[OK]', danger: '[WARN]', warning: '[ANOM]', info: '[DOT]' };
+    toast.innerHTML = `<span style="margin-right:8px;opacity:0.8;">${icons[type] || '[DOT]'}</span>${message}`;
     container.appendChild(toast);
     // Subtle sound
     try { (this.engine as any).audioManager?.playSFX?.(type === 'danger' ? 'alert' : type === 'success' ? 'discovery' : 'click'); } catch {}
